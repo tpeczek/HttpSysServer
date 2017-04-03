@@ -29,7 +29,8 @@ namespace Microsoft.AspNetCore.Server.HttpSys
         IHttpRequestLifetimeFeature,
         IHttpAuthenticationFeature,
         IHttpUpgradeFeature,
-        IHttpRequestIdentifierFeature
+        IHttpRequestIdentifierFeature,
+        IHttp2Feature
     {
         private RequestContext _requestContext;
         private IFeatureCollection _features;
@@ -467,6 +468,35 @@ namespace Microsoft.AspNetCore.Server.HttpSys
             {
                 _traceIdentitfier = value;
                 SetInitialized(Fields.TraceIdentifier);
+            }
+        }
+
+        bool IHttp2Feature.IsHttp2Request => Request.IsHttp2;
+
+        void IHttp2Feature.PushPromise(string path)
+        {
+            ((IHttp2Feature)this).PushPromise(path, "GET", null);
+        }
+
+        void IHttp2Feature.PushPromise(string path, string method, IHeaderDictionary headers)
+        {
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            if (method == null)
+            {
+                throw new ArgumentNullException(nameof(method));
+            }
+
+            try
+            {
+                Response.PushPromise(path, method, headers);
+            }
+            catch (Exception ex) when (!(ex is ArgumentException))
+            {
+                // TODO: Verbose log
             }
         }
 

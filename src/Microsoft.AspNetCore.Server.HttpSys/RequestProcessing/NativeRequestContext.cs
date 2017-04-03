@@ -72,6 +72,8 @@ namespace Microsoft.AspNetCore.Server.HttpSys
             }
         }
 
+        internal bool IsHttp2 => NativeRequest->Flags.HasFlag(HttpApi.HTTP_REQUEST_FLAG.Http2);
+
         internal uint Size
         {
             get { return (uint)_backingBuffer.Length - AlignmentPadding; }

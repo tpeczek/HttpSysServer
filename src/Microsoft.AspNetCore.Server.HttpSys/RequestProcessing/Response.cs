@@ -622,5 +622,138 @@ namespace Microsoft.AspNetCore.Server.HttpSys
             EnsureResponseStream();
             _nativeStream.SwitchToOpaqueMode();
         }
+
+        internal unsafe void PushPromise(string path, string method, IDictionary<string, StringValues> headers)
+        {
+            if (Request.IsHttp2)
+            {
+                uint statusCode = ErrorCodes.ERROR_SUCCESS;
+                HttpApi.HTTP_VERB verb = HttpApi.HTTP_VERB.HttpVerbHEAD;
+                string query = null;
+                HttpApi.HTTP_REQUEST_HEADERS* nativeHeadersPointer = null;
+
+                string methodToUpper = method.ToUpperInvariant();
+                if (HttpApi.HttpVerbs[(int)HttpApi.HTTP_VERB.HttpVerbGET] == methodToUpper)
+                {
+                    verb = HttpApi.HTTP_VERB.HttpVerbGET;
+                }
+                else if (HttpApi.HttpVerbs[(int)HttpApi.HTTP_VERB.HttpVerbHEAD] != methodToUpper)
+                {
+                    throw new ArgumentException("The push operation only supports GET and HEAD methods.", nameof(method));
+                }
+
+                int queryIndex = path.IndexOf('?');
+                if (queryIndex >= 0)
+                {
+                    if (queryIndex < path.Length - 1)
+                    {
+                        query = path.Substring(queryIndex + 1);
+                    }
+                    path = path.Substring(0, queryIndex);
+                }
+
+                List<GCHandle> pinnedHeaders = null;
+                if ((headers != null) && (headers.Count > 0))
+                {
+                    HttpApi.HTTP_REQUEST_HEADERS nativeHeaders = new HttpApi.HTTP_REQUEST_HEADERS();
+                    pinnedHeaders = SerializeHeaders(headers, ref nativeHeaders);
+                    nativeHeadersPointer = &nativeHeaders;
+                }
+
+                try
+                {
+                    statusCode = HttpApi.HttpDeclarePush(RequestContext.Server.RequestQueue.Handle, RequestContext.Request.RequestId, verb, path, query, nativeHeadersPointer);
+                }
+                finally
+                {
+                    if (pinnedHeaders != null)
+                    {
+                        FreePinnedHeaders(pinnedHeaders);
+                    }
+                }
+
+                if (statusCode != ErrorCodes.ERROR_SUCCESS)
+                {
+                    throw new HttpSysException((int)statusCode);
+                }
+            }
+        }
+
+        private unsafe List<GCHandle> SerializeHeaders(IDictionary<string, StringValues> headers, ref HttpApi.HTTP_REQUEST_HEADERS nativeHeaders)
+        {
+            List<GCHandle> pinnedHeaders = null;
+
+            if (headers.Count > 0)
+            {
+                int unknownHeadersCount = 0;
+                HttpApi.HTTP_UNKNOWN_HEADER[] unknownHeaders = null;
+
+                pinnedHeaders = new List<GCHandle>();
+
+                foreach (var header in headers)
+                {
+                    if ((header.Value.Count > 0) && (HttpApi.HTTP_REQUEST_HEADER_ID.IndexOfKnownHeader(header.Key) == -1))
+                    {
+                        unknownHeadersCount += header.Value.Count;
+                    }
+                }
+
+                try
+                {
+                    fixed (HttpApi.HTTP_KNOWN_HEADER* knownHeadersPointer = &nativeHeaders.KnownHeaders)
+                    {
+                        foreach (var header in headers)
+                        {
+                            if (header.Value.Count > 0)
+                            {
+                                int knownHeaderIndex = HttpApi.HTTP_REQUEST_HEADER_ID.IndexOfKnownHeader(header.Key);
+
+                                if (knownHeaderIndex == -1)
+                                {
+                                    if (unknownHeaders == null)
+                                    {
+                                        unknownHeaders = new HttpApi.HTTP_UNKNOWN_HEADER[unknownHeadersCount];
+                                        GCHandle unknownHeadersHandle = GCHandle.Alloc(unknownHeaders, GCHandleType.Pinned);
+                                        pinnedHeaders.Add(unknownHeadersHandle);
+                                        nativeHeaders.pUnknownHeaders = (HttpApi.HTTP_UNKNOWN_HEADER*)unknownHeadersHandle.AddrOfPinnedObject();
+                                    }
+
+                                    for (int headerValueIndex = 0; headerValueIndex < header.Value.Count; headerValueIndex++)
+                                    {
+                                        byte[] headerNameBytes = HeaderEncoding.GetBytes(header.Key);
+                                        unknownHeaders[nativeHeaders.UnknownHeaderCount].NameLength = (ushort)headerNameBytes.Length;
+                                        GCHandle headerNameHandle = GCHandle.Alloc(headerNameBytes, GCHandleType.Pinned);
+                                        pinnedHeaders.Add(headerNameHandle);
+                                        unknownHeaders[nativeHeaders.UnknownHeaderCount].pName = (sbyte*)headerNameHandle.AddrOfPinnedObject();
+
+                                        byte[] headerValueBytes = HeaderEncoding.GetBytes(header.Value[headerValueIndex] ?? String.Empty);
+                                        unknownHeaders[nativeHeaders.UnknownHeaderCount].RawValueLength = (ushort)headerValueBytes.Length;
+                                        GCHandle headerValueHandle = GCHandle.Alloc(headerValueBytes, GCHandleType.Pinned);
+                                        pinnedHeaders.Add(headerValueHandle);
+                                        unknownHeaders[nativeHeaders.UnknownHeaderCount].pRawValue = (sbyte*)headerValueHandle.AddrOfPinnedObject();
+                                        nativeHeaders.UnknownHeaderCount++;
+                                    }
+                                }
+                                else
+                                {
+                                    byte[] headerValueBytes = HeaderEncoding.GetBytes(header.Value.ToString());
+                                    knownHeadersPointer[knownHeaderIndex].RawValueLength = (ushort)headerValueBytes.Length;
+                                    GCHandle headerValueHandle = GCHandle.Alloc(headerValueBytes, GCHandleType.Pinned);
+                                    pinnedHeaders.Add(headerValueHandle);
+                                    knownHeadersPointer[knownHeaderIndex].pRawValue = (sbyte*)headerValueHandle.AddrOfPinnedObject();
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    FreePinnedHeaders(pinnedHeaders);
+                    throw;
+                }
+            }
+
+            return pinnedHeaders;
+        }
     }
 }

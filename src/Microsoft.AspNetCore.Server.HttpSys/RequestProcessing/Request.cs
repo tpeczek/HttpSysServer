@@ -42,6 +42,8 @@ namespace Microsoft.AspNetCore.Server.HttpSys
             UConnectionId = nativeRequestContext.ConnectionId;
             SslStatus = nativeRequestContext.SslStatus;
 
+            IsHttp2 = nativeRequestContext.IsHttp2;
+
             KnownMethod = nativeRequestContext.VerbId;
             Method = _nativeRequestContext.GetVerb();
 
@@ -160,6 +162,8 @@ namespace Microsoft.AspNetCore.Server.HttpSys
         public string Path { get; }
 
         public bool IsHttps => SslStatus != SslStatus.Insecure;
+
+        public bool IsHttp2 { get; }
 
         public string RawUrl { get; }
 

@@ -25,6 +25,7 @@ namespace Microsoft.AspNetCore.Server.HttpSys
             { typeof(IHttpUpgradeFeature), _identityFunc },
             { typeof(IHttpAuthenticationFeature), _identityFunc },
             { typeof(IHttpRequestIdentifierFeature), _identityFunc },
+            { typeof(IHttp2Feature), _identityFunc },
             { typeof(RequestContext), ctx => ctx.RequestContext },
         };
 
