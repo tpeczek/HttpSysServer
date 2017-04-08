@@ -345,7 +345,7 @@ namespace Microsoft.AspNetCore.Server.HttpSys
 
                     HttpApi.HTTP_MULTIPLE_KNOWN_HEADERS header = new HttpApi.HTTP_MULTIPLE_KNOWN_HEADERS();
 
-                    header.HeaderId = HttpApi.HTTP_RESPONSE_HEADER_ID.Enum.HttpHeaderWwwAuthenticate;
+                    header.HeaderId = HttpApi.HTTP_RESPONSE_HEADER_ID.HttpHeaderWwwAuthenticate;
                     header.Flags = HttpApi.HTTP_RESPONSE_INFO_FLAGS.PreserveOrder; // The docs say this is for www-auth only.
 
                     HttpApi.HTTP_KNOWN_HEADER[] nativeHeaderValues = new HttpApi.HTTP_KNOWN_HEADER[authChallenges.Count];

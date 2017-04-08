@@ -469,7 +469,7 @@ namespace Microsoft.AspNetCore.Server.HttpSys
         [StructLayout(LayoutKind.Sequential)]
         internal struct HTTP_MULTIPLE_KNOWN_HEADERS
         {
-            internal HTTP_RESPONSE_HEADER_ID.Enum HeaderId;
+            internal HTTP_RESPONSE_HEADER_ID HeaderId;
             internal HTTP_RESPONSE_INFO_FLAGS Flags;
             internal ushort KnownHeaderCount;
             internal HTTP_KNOWN_HEADER* KnownHeaders;
@@ -645,224 +645,186 @@ namespace Microsoft.AspNetCore.Server.HttpSys
             HTTP_AUTH_ENABLE_KERBEROS = 0x00000010,
         }
 
-        internal static class HTTP_RESPONSE_HEADER_ID
+        internal static class HTTP_HEADER_ID
         {
-            private static string[] _strings =
+            private static IDictionary<string, int> _headersLookup = new Dictionary<string, int>
             {
-                    "Cache-Control",
-                    "Connection",
-                    "Date",
-                    "Keep-Alive",
-                    "Pragma",
-                    "Trailer",
-                    "Transfer-Encoding",
-                    "Upgrade",
-                    "Via",
-                    "Warning",
-
-                    "Allow",
-                    "Content-Length",
-                    "Content-Type",
-                    "Content-Encoding",
-                    "Content-Language",
-                    "Content-Location",
-                    "Content-MD5",
-                    "Content-Range",
-                    "Expires",
-                    "Last-Modified",
-
-                    "Accept-Ranges",
-                    "Age",
-                    "ETag",
-                    "Location",
-                    "Proxy-Authenticate",
-                    "Retry-After",
-                    "Server",
-                    "Set-Cookie",
-                    "Vary",
-                    "WWW-Authenticate",
-                };
-
-            private static Dictionary<string, int> _lookupTable = CreateLookupTable();
-
-            private static Dictionary<string, int> CreateLookupTable()
-            {
-                Dictionary<string, int> lookupTable = new Dictionary<string, int>((int)Enum.HttpHeaderResponseMaximum, StringComparer.OrdinalIgnoreCase);
-                for (int i = 0; i < (int)Enum.HttpHeaderResponseMaximum; i++)
-                {
-                    lookupTable.Add(_strings[i], i);
-                }
-                return lookupTable;
-            }
-
-            internal static int IndexOfKnownHeader(string HeaderName)
-            {
-                int index;
-                return _lookupTable.TryGetValue(HeaderName, out index) ? index : -1;
-            }
-
-            internal enum Enum
-            {
-                HttpHeaderCacheControl = 0,    // general-header [section 4.5]
-                HttpHeaderConnection = 1,    // general-header [section 4.5]
-                HttpHeaderDate = 2,    // general-header [section 4.5]
-                HttpHeaderKeepAlive = 3,    // general-header [not in rfc]
-                HttpHeaderPragma = 4,    // general-header [section 4.5]
-                HttpHeaderTrailer = 5,    // general-header [section 4.5]
-                HttpHeaderTransferEncoding = 6,    // general-header [section 4.5]
-                HttpHeaderUpgrade = 7,    // general-header [section 4.5]
-                HttpHeaderVia = 8,    // general-header [section 4.5]
-                HttpHeaderWarning = 9,    // general-header [section 4.5]
-
-                HttpHeaderAllow = 10,   // entity-header  [section 7.1]
-                HttpHeaderContentLength = 11,   // entity-header  [section 7.1]
-                HttpHeaderContentType = 12,   // entity-header  [section 7.1]
-                HttpHeaderContentEncoding = 13,   // entity-header  [section 7.1]
-                HttpHeaderContentLanguage = 14,   // entity-header  [section 7.1]
-                HttpHeaderContentLocation = 15,   // entity-header  [section 7.1]
-                HttpHeaderContentMd5 = 16,   // entity-header  [section 7.1]
-                HttpHeaderContentRange = 17,   // entity-header  [section 7.1]
-                HttpHeaderExpires = 18,   // entity-header  [section 7.1]
-                HttpHeaderLastModified = 19,   // entity-header  [section 7.1]
-
-                // Response Headers
-
-                HttpHeaderAcceptRanges = 20,   // response-header [section 6.2]
-                HttpHeaderAge = 21,   // response-header [section 6.2]
-                HttpHeaderEtag = 22,   // response-header [section 6.2]
-                HttpHeaderLocation = 23,   // response-header [section 6.2]
-                HttpHeaderProxyAuthenticate = 24,   // response-header [section 6.2]
-                HttpHeaderRetryAfter = 25,   // response-header [section 6.2]
-                HttpHeaderServer = 26,   // response-header [section 6.2]
-                HttpHeaderSetCookie = 27,   // response-header [not in rfc]
-                HttpHeaderVary = 28,   // response-header [section 6.2]
-                HttpHeaderWwwAuthenticate = 29,   // response-header [section 6.2]
-
-                HttpHeaderResponseMaximum = 30,
-
-                HttpHeaderMaximum = 41
-            }
-        }
-
-        internal static class HTTP_REQUEST_HEADER_ID
-        {
-            private static string[] _strings =
-            {
-                    "Cache-Control",
-                    "Connection",
-                    "Date",
-                    "Keep-Alive",
-                    "Pragma",
-                    "Trailer",
-                    "Transfer-Encoding",
-                    "Upgrade",
-                    "Via",
-                    "Warning",
-
-                    "Allow",
-                    "Content-Length",
-                    "Content-Type",
-                    "Content-Encoding",
-                    "Content-Language",
-                    "Content-Location",
-                    "Content-MD5",
-                    "Content-Range",
-                    "Expires",
-                    "Last-Modified",
-
-                    "Accept",
-                    "Accept-Charset",
-                    "Accept-Encoding",
-                    "Accept-Language",
-                    "Authorization",
-                    "Cookie",
-                    "Expect",
-                    "From",
-                    "Host",
-                    "If-Match",
-                    "If-Modified-Since",
-                    "If-None-Match",
-                    "If-Range",
-                    "If-Unmodified-Since",
-                    "Max-Forwards",
-                    "Proxy-Authorization",
-                    "Referer",
-                    "Range",
-                    "TE",
-                    "Translate",
-                    "User-Agent"
+                { "Cache-Control", (int)GeneralHeaders.HttpHeaderCacheControl },
+                { "Connection", (int)GeneralHeaders.HttpHeaderConnection },
+                { "Date", (int)GeneralHeaders.HttpHeaderDate },
+                { "Keep-Alive", (int)GeneralHeaders.HttpHeaderKeepAlive },
+                { "Pragma", (int)GeneralHeaders.HttpHeaderPragma },
+                { "Trailer", (int)GeneralHeaders.HttpHeaderTrailer },
+                { "Transfer-Encoding", (int)GeneralHeaders.HttpHeaderTransferEncoding },
+                { "Upgrade", (int)GeneralHeaders.HttpHeaderUpgrade },
+                { "Via", (int)GeneralHeaders.HttpHeaderVia },
+                { "Warning", (int)GeneralHeaders.HttpHeaderWarning },
+                { "Allow", (int)EntityHeaders.HttpHeaderAllow },
+                { "Content-Length", (int)EntityHeaders.HttpHeaderContentLength },
+                { "Content-Type", (int)EntityHeaders.HttpHeaderContentType },
+                { "Content-Encoding", (int)EntityHeaders.HttpHeaderContentEncoding },
+                { "Content-Language", (int)EntityHeaders.HttpHeaderContentLanguage },
+                { "Content-Location", (int)EntityHeaders.HttpHeaderContentLocation },
+                { "Content-MD5", (int)EntityHeaders.HttpHeaderContentMd5 },
+                { "Content-Range", (int)EntityHeaders.HttpHeaderContentRange },
+                { "Expires", (int)EntityHeaders.HttpHeaderExpires },
+                { "Last-Modified", (int)EntityHeaders.HttpHeaderLastModified },
+                { "Accept-Ranges", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderAcceptRanges },
+                { "Age", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderAge },
+                { "ETag", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderEtag },
+                { "Location", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderLocation },
+                { "Proxy-Authenticate", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderProxyAuthenticate },
+                { "Retry-After", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderRetryAfter },
+                { "Server", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderServer },
+                { "Set-Cookie", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderSetCookie },
+                { "Vary", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderVary },
+                { "WWW-Authenticate", (int)HTTP_RESPONSE_HEADER_ID.HttpHeaderWwwAuthenticate },
+                { "Accept", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderAccept },
+                { "Accept-Charset", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderAcceptCharset },
+                { "Accept-Encoding", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderAcceptEncoding },
+                { "Accept-Language", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderAcceptLanguage },
+                { "Authorization", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderAuthorization },
+                { "Cookie", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderCookie },
+                { "Expect", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderExpect },
+                { "From", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderFrom },
+                { "Host", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderHost },
+                { "If-Match", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderIfMatch },
+                { "If-Modified-Since", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderIfModifiedSince },
+                { "If-None-Match", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderIfNoneMatch },
+                { "If-Range", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderIfRange },
+                { "If-Unmodified-Since", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderIfUnmodifiedSince },
+                { "Max-Forwards", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderMaxForwards },
+                { "Proxy-Authorization", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderProxyAuthorization },
+                { "Referer", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderReferer },
+                { "Range", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderRange },
+                { "TE", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderTe },
+                { "Translate", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderTranslate },
+                { "User-Agent", (int)HTTP_REQUEST_HEADER_ID.HttpHeaderUserAgent }
             };
 
-            private static Dictionary<string, int> _lookupTable = CreateLookupTable();
-
-            private static Dictionary<string, int> CreateLookupTable()
+            internal static int IndexOfKnownHeader(string headerName)
             {
-                Dictionary<string, int> lookupTable = new Dictionary<string, int>((int)Enum.HttpHeaderRequestMaximum, StringComparer.OrdinalIgnoreCase);
-                for (int i = 0; i < (int)Enum.HttpHeaderRequestMaximum; i++)
-                {
-                    lookupTable.Add(_strings[i], i);
-                }
-                return lookupTable;
+                return _headersLookup.TryGetValue(headerName, out int headerIndex) ? headerIndex : -1;
             }
 
-            internal static int IndexOfKnownHeader(string HeaderName)
+            // General headers [section 4.5]
+            internal enum GeneralHeaders
             {
-                int index;
-                return _lookupTable.TryGetValue(HeaderName, out index) ? index : -1;
+                HttpHeaderCacheControl = 0,
+                HttpHeaderConnection = 1,
+                HttpHeaderDate = 2,
+                HttpHeaderKeepAlive = 3,
+                HttpHeaderPragma = 4,
+                HttpHeaderTrailer = 5,
+                HttpHeaderTransferEncoding = 6,
+                HttpHeaderUpgrade = 7,
+                HttpHeaderVia = 8,
+                HttpHeaderWarning = 9
             }
 
-            internal enum Enum
+            // Entity headers  [section 7.1]
+            internal enum EntityHeaders
             {
-                HttpHeaderCacheControl = 0,    // general-header [section 4.5]
-                HttpHeaderConnection = 1,    // general-header [section 4.5]
-                HttpHeaderDate = 2,    // general-header [section 4.5]
-                HttpHeaderKeepAlive = 3,    // general-header [not in rfc]
-                HttpHeaderPragma = 4,    // general-header [section 4.5]
-                HttpHeaderTrailer = 5,    // general-header [section 4.5]
-                HttpHeaderTransferEncoding = 6,    // general-header [section 4.5]
-                HttpHeaderUpgrade = 7,    // general-header [section 4.5]
-                HttpHeaderVia = 8,    // general-header [section 4.5]
-                HttpHeaderWarning = 9,    // general-header [section 4.5]
-
-                HttpHeaderAllow = 10,   // entity-header  [section 7.1]
-                HttpHeaderContentLength = 11,   // entity-header  [section 7.1]
-                HttpHeaderContentType = 12,   // entity-header  [section 7.1]
-                HttpHeaderContentEncoding = 13,   // entity-header  [section 7.1]
-                HttpHeaderContentLanguage = 14,   // entity-header  [section 7.1]
-                HttpHeaderContentLocation = 15,   // entity-header  [section 7.1]
-                HttpHeaderContentMd5 = 16,   // entity-header  [section 7.1]
-                HttpHeaderContentRange = 17,   // entity-header  [section 7.1]
-                HttpHeaderExpires = 18,   // entity-header  [section 7.1]
-                HttpHeaderLastModified = 19,   // entity-header  [section 7.1]
-
-                // Request Headers
-
-                HttpHeaderAccept = 20,  // request-header [section 5.3]
-                HttpHeaderAcceptCharset = 21,  // request-header [section 5.3]
-                HttpHeaderAcceptEncoding = 22,  // request-header [section 5.3]
-                HttpHeaderAcceptLanguage = 23,  // request-header [section 5.3]
-                HttpHeaderAuthorization = 24,  // request-header [section 5.3]
-                HttpHeaderCookie = 25,
-                HttpHeaderExpect = 26,  // request-header [section 5.3]
-                HttpHeaderFrom = 27,  // request-header [section 5.3]
-                HttpHeaderHost = 28,  // request-header [section 5.3]
-                HttpHeaderIfMatch = 29,  // request-header [section 5.3]
-                HttpHeaderIfModifiedSince = 30,  // request-header [section 5.3]
-                HttpHeaderIfNoneMatch = 31,  // request-header [section 5.3]
-                HttpHeaderIfRange = 32,  // request-header [section 5.3]
-                HttpHeaderIfUnmodifiedSince = 33,  // request-header [section 5.3]
-                HttpHeaderMaxForwards = 34,  // request-header [section 5.3]
-                HttpHeaderProxyAuthorization = 35,  // request-header [section 5.3]
-                HttpHeaderReferer = 36,  // request-header [section 5.3]
-                HttpHeaderRange = 37,  // request-header [section 5.3]
-                HttpHeaderTe = 38,  // request-header [section 5.3]
-                HttpHeaderTranslate = 39,
-                HttpHeaderUserAgent = 40,  // request-header [section 5.3]
-
-                HttpHeaderRequestMaximum = 41,
-
-                HttpHeaderMaximum = 41
+                HttpHeaderAllow = 10,
+                HttpHeaderContentLength = 11,
+                HttpHeaderContentType = 12,
+                HttpHeaderContentEncoding = 13,
+                HttpHeaderContentLanguage = 14,
+                HttpHeaderContentLocation = 15,
+                HttpHeaderContentMd5 = 16,
+                HttpHeaderContentRange = 17,
+                HttpHeaderExpires = 18,
+                HttpHeaderLastModified = 19
             }
+
+            internal const int HttpHeaderMaximum = 41;
+        }
+
+        internal enum HTTP_RESPONSE_HEADER_ID
+        {
+            HttpHeaderCacheControl = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderCacheControl,
+            HttpHeaderConnection = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderConnection,
+            HttpHeaderDate = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderDate,
+            HttpHeaderKeepAlive = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderKeepAlive,
+            HttpHeaderPragma = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderPragma,
+            HttpHeaderTrailer = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderTrailer,
+            HttpHeaderTransferEncoding = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderTransferEncoding,
+            HttpHeaderUpgrade = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderUpgrade,
+            HttpHeaderVia = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderVia,
+            HttpHeaderWarning = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderWarning,
+            HttpHeaderAllow = HTTP_HEADER_ID.EntityHeaders.HttpHeaderAllow,
+            HttpHeaderContentLength = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentLength,
+            HttpHeaderContentType = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentType,
+            HttpHeaderContentEncoding = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentEncoding,
+            HttpHeaderContentLanguage = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentLanguage,
+            HttpHeaderContentLocation = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentLocation,
+            HttpHeaderContentMd5 = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentMd5,
+            HttpHeaderContentRange = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentRange,
+            HttpHeaderExpires = HTTP_HEADER_ID.EntityHeaders.HttpHeaderExpires,
+            HttpHeaderLastModified = HTTP_HEADER_ID.EntityHeaders.HttpHeaderLastModified,
+            // Response headers [section 6.2]
+            HttpHeaderAcceptRanges = 20,
+            HttpHeaderAge = 21,
+            HttpHeaderEtag = 22,
+            HttpHeaderLocation = 23,
+            HttpHeaderProxyAuthenticate = 24,
+            HttpHeaderRetryAfter = 25,
+            HttpHeaderServer = 26,
+            HttpHeaderSetCookie = 27,
+            HttpHeaderVary = 28,
+            HttpHeaderWwwAuthenticate = 29,
+
+            HttpHeaderResponseMaximum = 30,
+            HttpHeaderMaximum = HTTP_HEADER_ID.HttpHeaderMaximum
+        }
+
+        internal enum HTTP_REQUEST_HEADER_ID
+        {
+            HttpHeaderCacheControl = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderCacheControl,
+            HttpHeaderConnection = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderConnection,
+            HttpHeaderDate = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderDate,
+            HttpHeaderKeepAlive = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderKeepAlive,
+            HttpHeaderPragma = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderPragma,
+            HttpHeaderTrailer = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderTrailer,
+            HttpHeaderTransferEncoding = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderTransferEncoding,
+            HttpHeaderUpgrade = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderUpgrade,
+            HttpHeaderVia = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderVia,
+            HttpHeaderWarning = HTTP_HEADER_ID.GeneralHeaders.HttpHeaderWarning,
+            HttpHeaderAllow = HTTP_HEADER_ID.EntityHeaders.HttpHeaderAllow,
+            HttpHeaderContentLength = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentLength,
+            HttpHeaderContentType = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentType,
+            HttpHeaderContentEncoding = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentEncoding,
+            HttpHeaderContentLanguage = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentLanguage,
+            HttpHeaderContentLocation = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentLocation,
+            HttpHeaderContentMd5 = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentMd5,
+            HttpHeaderContentRange = HTTP_HEADER_ID.EntityHeaders.HttpHeaderContentRange,
+            HttpHeaderExpires = HTTP_HEADER_ID.EntityHeaders.HttpHeaderExpires,
+            HttpHeaderLastModified = HTTP_HEADER_ID.EntityHeaders.HttpHeaderLastModified,
+            // Request headers [section 5.3]
+            HttpHeaderAccept = 20,
+            HttpHeaderAcceptCharset = 21,
+            HttpHeaderAcceptEncoding = 22,
+            HttpHeaderAcceptLanguage = 23,
+            HttpHeaderAuthorization = 24,
+            HttpHeaderCookie = 25,
+            HttpHeaderExpect = 26,
+            HttpHeaderFrom = 27,
+            HttpHeaderHost = 28,
+            HttpHeaderIfMatch = 29,
+            HttpHeaderIfModifiedSince = 30,
+            HttpHeaderIfNoneMatch = 31,
+            HttpHeaderIfRange = 32,
+            HttpHeaderIfUnmodifiedSince = 33,
+            HttpHeaderMaxForwards = 34,
+            HttpHeaderProxyAuthorization = 35,
+            HttpHeaderReferer = 36,
+            HttpHeaderRange = 37,
+            HttpHeaderTe = 38,
+            HttpHeaderTranslate = 39,
+            HttpHeaderUserAgent = 40,
+
+            HttpHeaderRequestMaximum = 41,
+            HttpHeaderMaximum = HTTP_HEADER_ID.HttpHeaderMaximum
         }
 
         private static HTTPAPI_VERSION version;

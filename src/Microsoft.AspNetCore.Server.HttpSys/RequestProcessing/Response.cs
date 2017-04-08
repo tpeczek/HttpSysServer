@@ -452,11 +452,11 @@ namespace Microsoft.AspNetCore.Server.HttpSys
                     continue;
                 }
                 // See if this is an unknown header
-                lookup = HttpApi.HTTP_RESPONSE_HEADER_ID.IndexOfKnownHeader(headerPair.Key);
+                lookup = HttpApi.HTTP_HEADER_ID.IndexOfKnownHeader(headerPair.Key);
 
                 // Http.Sys doesn't let us send the Connection: Upgrade header as a Known header.
                 if (lookup == -1 ||
-                    (isOpaqueUpgrade && lookup == (int)HttpApi.HTTP_RESPONSE_HEADER_ID.Enum.HttpHeaderConnection))
+                    (isOpaqueUpgrade && lookup == (int)HttpApi.HTTP_RESPONSE_HEADER_ID.HttpHeaderConnection))
                 {
                     numUnknownHeaders += headerPair.Value.Count;
                 }
@@ -479,11 +479,11 @@ namespace Microsoft.AspNetCore.Server.HttpSys
                         }
                         headerName = headerPair.Key;
                         StringValues headerValues = headerPair.Value;
-                        lookup = HttpApi.HTTP_RESPONSE_HEADER_ID.IndexOfKnownHeader(headerName);
+                        lookup = HttpApi.HTTP_HEADER_ID.IndexOfKnownHeader(headerName);
 
                         // Http.Sys doesn't let us send the Connection: Upgrade header as a Known header.
                         if (lookup == -1 ||
-                            (isOpaqueUpgrade && lookup == (int)HttpApi.HTTP_RESPONSE_HEADER_ID.Enum.HttpHeaderConnection))
+                            (isOpaqueUpgrade && lookup == (int)HttpApi.HTTP_RESPONSE_HEADER_ID.HttpHeaderConnection))
                         {
                             if (unknownHeaders == null)
                             {
@@ -536,7 +536,7 @@ namespace Microsoft.AspNetCore.Server.HttpSys
 
                             HttpApi.HTTP_MULTIPLE_KNOWN_HEADERS header = new HttpApi.HTTP_MULTIPLE_KNOWN_HEADERS();
 
-                            header.HeaderId = (HttpApi.HTTP_RESPONSE_HEADER_ID.Enum)lookup;
+                            header.HeaderId = (HttpApi.HTTP_RESPONSE_HEADER_ID)lookup;
                             header.Flags = HttpApi.HTTP_RESPONSE_INFO_FLAGS.PreserveOrder; // TODO: The docs say this is for www-auth only.
 
                             HttpApi.HTTP_KNOWN_HEADER[] nativeHeaderValues = new HttpApi.HTTP_KNOWN_HEADER[headerValues.Count];
@@ -692,7 +692,7 @@ namespace Microsoft.AspNetCore.Server.HttpSys
 
                 foreach (var header in headers)
                 {
-                    if ((header.Value.Count > 0) && (HttpApi.HTTP_REQUEST_HEADER_ID.IndexOfKnownHeader(header.Key) == -1))
+                    if ((header.Value.Count > 0) && (HttpApi.HTTP_HEADER_ID.IndexOfKnownHeader(header.Key) == -1))
                     {
                         unknownHeadersCount += header.Value.Count;
                     }
@@ -706,7 +706,7 @@ namespace Microsoft.AspNetCore.Server.HttpSys
                         {
                             if (header.Value.Count > 0)
                             {
-                                int knownHeaderIndex = HttpApi.HTTP_REQUEST_HEADER_ID.IndexOfKnownHeader(header.Key);
+                                int knownHeaderIndex = HttpApi.HTTP_HEADER_ID.IndexOfKnownHeader(header.Key);
 
                                 if (knownHeaderIndex == -1)
                                 {
