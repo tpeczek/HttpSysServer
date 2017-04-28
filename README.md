@@ -1,10 +1,7 @@
-HttpSysServer
-=================
+HttpSysServer with HTTP/2 support
+=================================
 
-| AppVeyor | Travis |
-| ---- | ----
-| [![AppVeyor](https://ci.appveyor.com/api/projects/status/47fv9qoe862xlr25/branch/dev?svg=true)](https://ci.appveyor.com/project/aspnetci/HttpSysServer/branch/dev) | [![Travis](https://travis-ci.org/aspnet/HttpSysServer.svg?branch=dev)](https://travis-ci.org/aspnet/HttpSysServer) |
+This repo contains a [fork](https://github.com/aspnet/HttpSysServer) of web server for ASP.NET Core based on the Windows [Http Server API](https://msdn.microsoft.com/en-us/library/windows/desktop/aa364510.aspx) extended with HTTP/2 support.
 
-This repo contains a web server for ASP.NET Core based on the Windows [Http Server API](https://msdn.microsoft.com/en-us/library/windows/desktop/aa364510.aspx).
-
-This project is part of ASP.NET Core. You can find samples, documentation and getting started instructions for ASP.NET Core at the [Home](https://github.com/aspnet/home) repo.
+There is a blog post available describing implementation details:
+- [HTTP/2 with Server Push proof of concept for ASP.NET Core HttpSysServer](https://www.tpeczek.com/2017/04/http2-with-server-push-proof-of-concept.html)
